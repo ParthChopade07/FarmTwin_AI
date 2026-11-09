@@ -1,4 +1,4 @@
-﻿"""
+"""
 Quick Earth Engine + Sentinel-2 connection test.
 Run from inside the backend/ directory with venv active:
 
@@ -14,7 +14,7 @@ import ee
 
 # Will use locally stored OAuth credentials from `earthengine authenticate`
 # or Application Default Credentials -- no JSON key needed.
-ee.Initialize(project="agri-ad-68884")
+ee.Initialize(project="your-gcp-project-id")
 
 print("Earth Engine initialized OK")
 print(ee.String("AgriTwin Earth Engine connection successful!").getInfo())

@@ -1,4 +1,4 @@
-﻿==================================================
+==================================================
 STEP 1: Earth Engine Authentication (One-Time Setup)
 ==================================================
 
@@ -7,7 +7,7 @@ cd "E:\Project\FarmTwin_AI\FarmTwin\backend"
 .\venv\Scripts\Activate.ps1
 earthengine authenticate
 # Sign in with your Google Account in the browser window
-earthengine set_project agri-ad-68884
+earthengine set_project your-gcp-project-id
 
 
 ==================================================
