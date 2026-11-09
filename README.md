@@ -23,7 +23,7 @@ Every endpoint from the original module plan is now real — `/satellite`, `/ndv
 ## Project layout
 
 ```
-agritwin-ai/
+farmtwin-ai/
 ├── frontend/          React (Vite) + Leaflet + Leaflet.draw
 │   └── vercel.json     SPA rewrite config for Vercel
 ├── backend/           FastAPI + SQLAlchemy + GeoAlchemy2
