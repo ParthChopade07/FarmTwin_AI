@@ -11,10 +11,20 @@ export default function BuyerDashboard({ user, role, onSwitchRole, onLogout, onL
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([api.browseListings(), api.myOffers(user.id)])
-      .then(([l, o]) => { setListings(l); setOffers(o); })
+    Promise.all([
+      api.browseListings().catch(() => []),
+      api.myOffers(user?.id).catch(() => []),
+    ])
+      .then(([l, o]) => {
+        setListings(Array.isArray(l) ? l : []);
+        setOffers(Array.isArray(o) ? o : []);
+      })
+      .catch(() => {
+        setListings([]);
+        setOffers([]);
+      })
       .finally(() => setLoading(false));
-  }, [user.id]);
+  }, [user?.id]);
 
   const accepted = offers.filter((o) => o.status === "accepted").length;
   const pending = offers.filter((o) => o.status === "pending").length;
@@ -30,8 +40,8 @@ export default function BuyerDashboard({ user, role, onSwitchRole, onLogout, onL
       onSwitchRole={onSwitchRole}
       onLogout={onLogout}
       onLanguageChange={onLanguageChange}
-      title={t("buyer.title")}
-      subtitle={t("buyer.welcome", { name: user.name })}
+      title={t("buyer.title", "Buyer Dashboard")}
+      subtitle={t("buyer.welcome", { name: user?.name || user?.email || "Buyer" })}
       actions={
         <>
           <Link to="/marketplace" className="btn-primary" style={{ textDecoration: "none" }}>{t("buyer.browse")}</Link>

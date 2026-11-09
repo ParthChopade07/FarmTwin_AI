@@ -1,0 +1,27 @@
+Terminal 1: Backend
+
+
+cd /d "E:\Project\FarmTwin_AI\FarmTwin"
+cd backend
+.\venv\Scripts\activate
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+
+__________________________________________________________________________________________
+
+
+Terminal 2: Frontend
+
+cd /d "E:\Project\FarmTwin_AI\FarmTwin"
+cd frontend
+npm install      (first time)
+npm run dev
+
+
+___________________________________________________________________________________________
+
+
+Alternative (Docker)
+
+cd /d "E:\Project\FarmTwin_AI\FarmTwin"
+docker compose up -d

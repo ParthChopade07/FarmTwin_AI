@@ -1,3 +1,15 @@
+databases:
+  - name: agritwin-db
+    plan: starter
+    databaseName: agritwin
+    user: agritwin
+    postgresMajorVersion: "16"
+    # Render's managed Postgres doesn't enable PostGIS by default - after the
+    # database is created, connect with psql and run:
+    #   CREATE EXTENSION IF NOT EXISTS postgis;
+    # (schema.sql does this too, but the extension needs a superuser the app's
+    # own role may not have - check Render's PostGIS docs if this fails.)
+
 services:
   - type: web
     name: agritwin-backend
@@ -8,7 +20,9 @@ services:
     rootDir: backend
     envVars:
       - key: DATABASE_URL
-        sync: false # Set to your Neon PostgreSQL connection string (postgresql://...)
+        fromDatabase:
+          name: agritwin-db
+          property: connectionString
       - key: CORS_ORIGINS
         sync: false # set to your deployed Vercel frontend URL
       - key: GEE_SERVICE_ACCOUNT

@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.orm import Farm, SatelliteObservation
 from app.services import ndvi_planetary as ndvi_svc
-from app.services.ndvi import detect_stress       # stress logic unchanged
+from app.services.ndvi import detect_stress
 
 router = APIRouter(prefix="/api/farms", tags=["satellite"])
 
@@ -141,6 +141,8 @@ def get_ndvi(farm_id: str, lookback_days: int = 90, db: Session = Depends(get_db
         }
 
     stress = detect_stress(current, previous)
+
+    mean_val = current.get("ndvi_mean") if current else None
 
     return {
         "current":  current,

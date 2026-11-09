@@ -64,6 +64,14 @@ def get_weather(farm_id: str, db: Session = Depends(get_db)):
         )
     db.commit()
 
+    from app.services.geo import get_location_for_coords
+    loc_info = get_location_for_coords(centroid["lat"], centroid["lon"])
+    result["location"] = loc_info["location"]
+    result["district"] = loc_info["district"]
+    result["state"] = loc_info["state"]
+    result["mandi"] = loc_info.get("mandi", f"{loc_info['district']} APMC Yard")
+    result["centroid"] = centroid
+
     return result
 
 

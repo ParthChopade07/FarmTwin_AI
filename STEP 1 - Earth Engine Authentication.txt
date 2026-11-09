@@ -1,0 +1,35 @@
+﻿==================================================
+STEP 1: Earth Engine Authentication (One-Time Setup)
+==================================================
+
+# Open PowerShell / Terminal:
+cd "E:\Project\FarmTwin_AI\FarmTwin\backend"
+.\venv\Scripts\Activate.ps1
+earthengine authenticate
+# Sign in with your Google Account in the browser window
+earthengine set_project agri-ad-68884
+
+
+==================================================
+MANUAL RUNNING COMMANDS
+==================================================
+
+1. Start Database (PostgreSQL / Docker):
+   cd "E:\Project\FarmTwin_AI\FarmTwin"
+   docker compose up -d
+
+2. Start Backend (FastAPI on Port 8000):
+   cd "E:\Project\FarmTwin_AI\FarmTwin\backend"
+   .\venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+
+3. Start Frontend (React + Vite on Port 5173):
+   cd "E:\Project\FarmTwin_AI\FarmTwin\frontend"
+   npm run dev
+
+4. Health Check:
+   curl http://127.0.0.1:8000/api/health
+
+5. Stop / Restart Database:
+   docker compose down
+   docker compose down -v   # (Fresh start - deletes DB volumes)
+   docker compose ps

@@ -1,11 +1,16 @@
 import { useState } from "react";
 import { api } from "../services/api.js";
-
 function healthLabel(ndviMean) {
-  if (ndviMean === null || ndviMean === undefined) return { label: "Unknown", badge: "" };
-  if (ndviMean >= 0.6) return { label: "Healthy", badge: "badge-healthy" };
-  if (ndviMean >= 0.35) return { label: "Moderate", badge: "badge-moderate" };
-  return { label: "Stressed", badge: "badge-stressed" };
+  if (ndviMean === null || ndviMean === undefined) {
+    return { label: "Unknown", badge: "badge-unknown" };
+  }
+  if (ndviMean >= 0.6) {
+    return { label: "Good health", badge: "badge-good" };
+  }
+  if (ndviMean >= 0.35) {
+    return { label: "Moderate", badge: "badge-medium" };
+  }
+  return { label: "Low vigor", badge: "badge-low" };
 }
 
 export default function HealthCard({ farmId }) {

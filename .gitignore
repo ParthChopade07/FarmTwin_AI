@@ -1,41 +1,46 @@
-# Environment variables and secrets
+# Environment & Secrets (NEVER COMMIT)
 .env
-.env.local
-.env.*.local
 *.env
+.env.*
+!.env.example
 
-# Dependencies
-node_modules/
-backend/venv/
-backend/.venv/
-venv/
-.venv/
-
-# Python cache & logs
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.log
-backend/*.log
-frontend/*.log
-
-# Database files
-*.db
-*.sqlite
-*.sqlite3
-
-# Build outputs
-dist/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
 build/
-.next/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# OS and IDE files
+# Node & Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+.npm
+.vite
+
+# IDE & OS
+.vscode/
+.idea/
+*.swp
+*.swo
 .DS_Store
 Thumbs.db
-.idea/
-.vscode/
-*.swp
-*.zip
-.env
-node_modules/

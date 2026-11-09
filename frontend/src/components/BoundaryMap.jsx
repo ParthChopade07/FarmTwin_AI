@@ -141,14 +141,51 @@ const ALL_CSS = `
   }
 `;
 
-/* ── Nominatim search helper ─────────────────────────────────────────────── */
-async function nominatimSearch(query) {
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-    query
-  )}&format=json&addressdetails=1&limit=6&countrycodes=in`;
-  const res = await fetch(url, { headers: { "Accept-Language": "en" } });
-  if (!res.ok) return [];
-  return res.json();
+/* ── Multi-provider geocoding (Nominatim → Photon fallback) ─────────────── */
+async function geocodeSearch(query) {
+  // 1️⃣ Try Nominatim (no countrycodes restriction for wider coverage)
+  try {
+    const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+      query
+    )}&format=json&addressdetails=1&limit=6`;
+    const nomRes = await fetch(nomUrl, {
+      headers: { "Accept-Language": "en", "User-Agent": "AgriTwinApp/1.0" },
+    });
+    if (nomRes.ok) {
+      const nomData = await nomRes.json();
+      if (nomData.length > 0) return { results: nomData, provider: "nominatim" };
+    }
+  } catch (_) { /* fall through */ }
+
+  // 2️⃣ Fallback: Photon by Komoot (better coverage for small Indian villages)
+  try {
+    const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=6&lang=en`;
+    const photonRes = await fetch(photonUrl);
+    if (photonRes.ok) {
+      const photonData = await photonRes.json();
+      const features = photonData.features || [];
+      return {
+        results: features.map((f) => ({
+          place_id: f.properties.osm_id || Math.random(),
+          display_name: [
+            f.properties.name,
+            f.properties.city,
+            f.properties.county,
+            f.properties.state,
+            f.properties.country,
+          ]
+            .filter(Boolean)
+            .join(", "),
+          lat: String(f.geometry.coordinates[1]),
+          lon: String(f.geometry.coordinates[0]),
+          type: f.properties.type || "place",
+        })),
+        provider: "photon",
+      };
+    }
+  } catch (_) { /* fall through */ }
+
+  return { results: [], provider: "none" };
 }
 
 /* ── Main component ──────────────────────────────────────────────────────── */
@@ -181,32 +218,14 @@ export default function BoundaryMap({ onBoundaryChange }) {
     }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
     mapRef.current = map;
 
-    /* ── Layer 1: Esri Satellite imagery (base) ─────────────────────── */
+    /* ── Satellite + Roads/Labels Hybrid Layer ───────────────────────── */
+    // Google Satellite Hybrid provides high-resolution, unwatermarked imagery across all rural/urban farm areas
     L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      "https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
       {
-        attribution:
-          'Tiles &copy; <a href="https://www.esri.com/">Esri</a> &mdash; Source: Esri, USDA, USGS, GeoEye, IGN, IGP and the GIS User Community',
-        maxZoom: 19,
-      }
-    ).addTo(map);
-
-    /* ── Layer 2: Esri Boundaries & Places (country/state/city labels) ─ */
-    L.tileLayer(
-      "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
-      { attribution: "", maxZoom: 19, opacity: 1 }
-    ).addTo(map);
-
-    /* ── Layer 3: OpenStreetMap label overlay (village / road names) ─── */
-    // This transparent overlay adds village names, local roads, and
-    // farm/locality labels that Esri's label layer often misses at zoom 15+.
-    L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
-      {
-        attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
-        subdomains: "abcd",
-        maxZoom: 19,
-        opacity: 0.9,
+        maxZoom: 20,
+        subdomains: ["mt0", "mt1", "mt2", "mt3"],
+        attribution: '&copy; Google Maps',
       }
     ).addTo(map);
 
@@ -354,7 +373,7 @@ export default function BoundaryMap({ onBoundaryChange }) {
     setSearching(true);
     setShowResults(true);
     try {
-      const results = await nominatimSearch(q);
+      const { results } = await geocodeSearch(q);
       setSearchResults(results);
     } catch {
       setSearchResults([]);
@@ -465,7 +484,12 @@ export default function BoundaryMap({ onBoundaryChange }) {
                 {searching ? (
                   <div className="map-search-no-result">Searching...</div>
                 ) : searchResults.length === 0 ? (
-                  <div className="map-search-no-result">No results found</div>
+                  <div className="map-search-no-result">
+                    <div>🔍 No results found.</div>
+                    <div style={{ marginTop: "4px", fontSize: "0.75rem", color: "#aaa" }}>
+                      Try a broader term, e.g. <em>"Satara district"</em> or <em>"Satara Maharashtra"</em>
+                    </div>
+                  </div>
                 ) : (
                   searchResults.map((r) => (
                     <div

@@ -27,6 +27,10 @@ class FarmOut(BaseModel):
     area_acres: Optional[float] = None
     boundary: GeoJSONPolygon
     created_at: datetime
+    location: Optional[str] = None
+    district: Optional[str] = None
+    state: Optional[str] = None
+    centroid: Optional[dict] = None
 
     class Config:
         from_attributes = True
@@ -149,6 +153,18 @@ class ServiceBookingOut(BaseModel):
     notes: Optional[str] = None
     status: str
     created_at: datetime
+    # Escrow / dispatch fields (optional — present after dispatch)
+    escrow_amount: Optional[float] = None
+    escrow_status: Optional[str] = None
+    operator_name: Optional[str] = None
+    operator_phone: Optional[str] = None
+    operator_vehicle: Optional[str] = None
+    operator_distance_km: Optional[float] = None
+    dispatch_whatsapp_url: Optional[str] = None
+    proof_of_work_status: Optional[str] = None
+    proof_coverage_pct: Optional[float] = None
+    proof_log_name: Optional[str] = None
+    payout_released_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -161,3 +177,46 @@ class MedicineAskRequest(BaseModel):
     question: str
     crop: Optional[str] = None
     language: Optional[str] = "en"
+
+
+# ---- Explainable AI & Weekly Report & Farm Memory ----
+
+
+class FarmActivityCreate(BaseModel):
+    activity_type: str
+    description: str
+    amount: Optional[float] = None
+    unit: Optional[str] = None
+    activity_date: Optional[date] = None
+
+
+class RiskFactorOut(BaseModel):
+    factor_name: str
+    category: str
+    impact_weight: float
+    status: str
+    explanation: str
+
+
+class XAIOut(BaseModel):
+    farm_name: str
+    crop: str
+    overall_risk_score: float
+    overall_status: str
+    primary_cause: str
+    contributing_factors: List[RiskFactorOut]
+    xai_summary: str
+
+
+class WeeklyReportOut(BaseModel):
+    report_id: str
+    farm_id: str
+    farm_name: str
+    crop: str
+    report_week: str
+    summary_text: str
+    weather_outlook: Optional[str] = None
+    risks_identified: Optional[str] = None
+    recommended_actions: Optional[str] = None
+    created_at: str
+

@@ -13,6 +13,7 @@ export default function Inbox({ user, role, onSwitchRole, onLogout, onLanguageCh
 
   const FULFILLMENT_LABEL = {
     awaiting_payment: t("inbox.awaiting_payment"),
+    escrow_secured: "20% Escrow Secured (ICICI Virtual Account)",
     paid: t("inbox.paid"),
     delivered: t("inbox.delivered"),
   };
@@ -34,6 +35,16 @@ export default function Inbox({ user, role, onSwitchRole, onLogout, onLanguageCh
     setBusyId(offerId);
     try { await api.updateFulfillment(offerId, "delivered"); load(); }
     finally { setBusyId(null); }
+  };
+
+  const releaseMilestone = async (offerId) => {
+    setBusyId(offerId);
+    try {
+      await api.releaseB2bMilestone(offerId, { milestone: "final_delivery" });
+      load();
+    } finally {
+      setBusyId(null);
+    }
   };
 
   return (
@@ -74,6 +85,16 @@ export default function Inbox({ user, role, onSwitchRole, onLogout, onLanguageCh
                   <button className="btn-secondary" disabled={busyId === o.id} onClick={() => respond(o.id, "accepted")}>{t("common.accept")}</button>
                   <button className="btn-secondary" disabled={busyId === o.id} onClick={() => respond(o.id, "rejected")}>{t("common.reject")}</button>
                 </>
+              )}
+              {role !== "buyer" && o.status === "accepted" && o.fulfillment_status === "escrow_secured" && (
+                <button
+                  className="btn-primary"
+                  style={{ background: "#16a34a", borderColor: "#15803d", fontSize: "0.82rem", whiteSpace: "nowrap" }}
+                  disabled={busyId === o.id}
+                  onClick={() => releaseMilestone(o.id)}
+                >
+                  🚚 Mandi Weighbridge Verified &bull; Release Escrow
+                </button>
               )}
               {role !== "buyer" && o.status === "accepted" && o.fulfillment_status === "paid" && (
                 <button className="btn-primary" disabled={busyId === o.id} onClick={() => markDelivered(o.id)}>{t("common.mark_delivered")}</button>

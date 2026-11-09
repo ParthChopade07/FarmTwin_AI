@@ -57,28 +57,32 @@ export default function NotificationBell({ userId, role }) {
           style={{
             position: "absolute",
             right: 0,
-            top: "calc(100% + 0.5rem)",
+            top: "calc(100% + 0.8rem)",
             width: 320,
             maxHeight: 380,
             overflowY: "auto",
             zIndex: 20,
-            boxShadow: "0 8px 24px rgba(45,38,26,0.15)",
+            borderRadius: "24px",
+            background: "var(--clay-surface)",
+            boxShadow: "var(--clay-card-shadow-lg)",
+            border: "none",
+            padding: "1.2rem",
           }}
         >
-          <div style={{ fontWeight: 700, marginBottom: "0.5rem" }}>Notifications</div>
-          {items.length === 0 && <p style={{ fontSize: "0.85rem", color: "#6b6455", margin: 0 }}>You're all caught up.</p>}
+          <div style={{ fontWeight: 900, marginBottom: "0.75rem", color: "var(--soil)", fontFamily: "'Nunito', sans-serif", fontSize: "1rem" }}>🔔 Notifications</div>
+          {items.length === 0 && <p style={{ fontSize: "0.85rem", color: "var(--sage-mid)", margin: 0, fontFamily: "'Nunito', sans-serif", fontWeight: 600 }}>You're all caught up.</p>}
           {items.map((n) => (
             <div
               key={n.id}
               style={{
-                padding: "0.6rem 0",
-                borderBottom: "1px solid var(--line)",
+                padding: "0.65rem 0",
+                borderBottom: "2px solid var(--clay-bg)",
               }}
             >
-              <div style={{ fontWeight: 600, fontSize: "0.85rem", color: n.level === "warning" ? "var(--stress)" : "var(--soil)" }}>
+              <div style={{ fontWeight: 800, fontSize: "0.85rem", color: n.level === "warning" ? "var(--stress)" : "var(--soil)", fontFamily: "'Nunito', sans-serif" }}>
                 {n.title}
               </div>
-              <div style={{ fontSize: "0.8rem", color: "#6b6455" }}>{n.detail}</div>
+              <div style={{ fontSize: "0.8rem", color: "var(--sage-mid)", fontFamily: "'Nunito', sans-serif", fontWeight: 600 }}>{n.detail}</div>
             </div>
           ))}
         </div>

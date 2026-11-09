@@ -15,11 +15,29 @@ import Offers from "./pages/Offers.jsx";
 import Inbox from "./pages/Inbox.jsx";
 import Settings from "./pages/Settings.jsx";
 import WhatIfLab from "./pages/WhatIfLab.jsx";
+import Alerts from "./pages/Alerts.jsx";
+import YieldPredictor from "./pages/YieldPredictor.jsx";
+import GovernmentSchemes from "./pages/GovernmentSchemes.jsx";
+import CarbonCredits from "./pages/CarbonCredits.jsx";
+import OperatorJobPortal from "./pages/OperatorJobPortal.jsx";
 
 const STORAGE_KEY = "agritwin_user";
 const ROLE_KEY = "agritwin_role";
 
 export default function App() {
+  const [currentLang, setCurrentLang] = useState(() => i18n.language || "en");
+
+  useEffect(() => {
+    const onLanguageChanged = (lng) => {
+      setCurrentLang(lng);
+      localStorage.setItem("i18nextLng", lng);
+      document.documentElement.lang = lng;
+    };
+    i18n.on("languageChanged", onLanguageChanged);
+    return () => {
+      i18n.off("languageChanged", onLanguageChanged);
+    };
+  }, []);
   const [user, setUser] = useState(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -58,6 +76,7 @@ export default function App() {
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem("agritwin_token");
     i18n.changeLanguage("en");
     navigate("/");
   };
@@ -68,9 +87,11 @@ export default function App() {
     navigate(newRole === "buyer" ? "/buyer" : "/dashboard");
   };
 
-  // Called from Settings page when user changes language mid-session
+  // Synchronized language handler called from anywhere in the app
   const handleLanguageChange = (lang) => {
     i18n.changeLanguage(lang);
+    localStorage.setItem("i18nextLng", lang);
+    setCurrentLang(lang);
     if (user) {
       const updated = { ...user, language: lang };
       setUser(updated);
@@ -81,6 +102,7 @@ export default function App() {
   const common = {
     user,
     role,
+    currentLanguage: currentLang,
     onSwitchRole: handleSwitchRole,
     onLogout: handleLogout,
     onLanguageChange: handleLanguageChange,
@@ -97,14 +119,19 @@ export default function App() {
       <Route path="/farms/:farmId" element={user ? <FarmDetail {...common} /> : <Navigate to="/" />} />
       <Route path="/weather" element={user ? <WeatherIntelligence {...common} /> : <Navigate to="/" />} />
       <Route path="/what-if" element={user ? <WhatIfLab {...common} /> : <Navigate to="/" />} />
+      <Route path="/alerts" element={user ? <Alerts {...common} /> : <Navigate to="/" />} />
+      <Route path="/yield-predictor" element={user ? <YieldPredictor {...common} /> : <Navigate to="/" />} />
       <Route path="/advisor" element={user ? <AIAdvisor {...common} /> : <Navigate to="/" />} />
       <Route path="/disease-detection" element={user ? <DiseaseDetection {...common} /> : <Navigate to="/" />} />
       <Route path="/services" element={user ? <ServiceHub {...common} /> : <Navigate to="/" />} />
       <Route path="/marketplace" element={user ? <Marketplace {...common} /> : <Navigate to="/" />} />
+      <Route path="/schemes" element={user ? <GovernmentSchemes {...common} /> : <Navigate to="/" />} />
+      <Route path="/carbon-credits" element={user ? <CarbonCredits {...common} /> : <Navigate to="/" />} />
       <Route path="/buyer" element={user ? <BuyerDashboard {...common} /> : <Navigate to="/" />} />
       <Route path="/offers" element={user ? <Offers {...common} /> : <Navigate to="/" />} />
       <Route path="/inbox" element={user ? <Inbox {...common} /> : <Navigate to="/" />} />
       <Route path="/settings" element={user ? <Settings {...common} /> : <Navigate to="/" />} />
+      <Route path="/operator/job/:bookingId" element={<OperatorJobPortal />} />
     </Routes>
   );
 }

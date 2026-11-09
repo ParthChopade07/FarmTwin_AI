@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 
+
 const HEALTH_COLORS = {
   good: "#4d7042",
   medium: "#d9a441",
@@ -81,7 +82,7 @@ async function nominatimSearch(query) {
   return res.json();
 }
 
-export default function NdviMap({ boundaryGeojson, gridCells, allBoundaries = [] }) {
+export default function NdviMap({ boundaryGeojson, gridCells, allBoundaries = [], height = '420px', farmName = '', hideSearch = false, activeLayer = 'NDVI', spectralData = null }) {
   const mapRef = useRef(null);
   const containerRef = useRef(null);
   const layerGroupRef = useRef(null);
@@ -106,22 +107,14 @@ export default function NdviMap({ boundaryGeojson, gridCells, allBoundaries = []
     const map = L.map(containerRef.current, { zoomControl: true });
     mapRef.current = map;
 
-    // 1. Satellite Base
+    // Satellite + Road/Village Overlay
     L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      { attribution: 'Tiles &copy; Esri', maxZoom: 19 }
-    ).addTo(map);
-
-    // 2. Esri Places
-    L.tileLayer(
-      "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
-      { attribution: "", maxZoom: 19, opacity: 1 }
-    ).addTo(map);
-
-    // 3. CARTO Labels
-    L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
-      { attribution: '&copy; CARTO', subdomains: "abcd", maxZoom: 19, opacity: 0.9 }
+      "https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+      {
+        maxZoom: 20,
+        subdomains: ["mt0", "mt1", "mt2", "mt3"],
+        attribution: '&copy; Google Maps',
+      }
     ).addTo(map);
 
     boundaryGroupRef.current = L.layerGroup().addTo(map);
@@ -164,8 +157,19 @@ export default function NdviMap({ boundaryGeojson, gridCells, allBoundaries = []
       try {
         const boundaryLayer = L.geoJSON(boundaryGeojson, {
           style: { color: "#2f4d27", weight: 3, fill: true, fillColor: "#4d7042", fillOpacity: 0.15 },
-        }).addTo(boundaryGroupRef.current);
-        mapRef.current.fitBounds(boundaryLayer.getBounds(), { padding: [30, 30] });
+        });
+        if (farmName) {
+          boundaryLayer.bindTooltip(farmName, { permanent: true, direction: "center", className: "farm-boundary-tooltip" });
+        }
+        boundaryLayer.addTo(boundaryGroupRef.current);
+        const b = boundaryLayer.getBounds();
+        mapRef.current.fitBounds(b, { padding: [30, 30] });
+        setTimeout(() => {
+          if (mapRef.current) {
+            mapRef.current.invalidateSize();
+            mapRef.current.fitBounds(b, { padding: [30, 30] });
+          }
+        }, 200);
       } catch (err) {}
     }
   }, [boundaryGeojson, allBoundaries]);
@@ -195,6 +199,41 @@ export default function NdviMap({ boundaryGeojson, gridCells, allBoundaries = []
         .addTo(layerGroupRef.current);
     });
   }, [gridCells]);
+
+
+  // Active Multispectral Index Layer Overlay
+  useEffect(() => {
+    if (!mapRef.current || !layerGroupRef.current) return;
+    layerGroupRef.current.clearLayers();
+
+    if (!boundaryGeojson) return;
+
+    // Layer-specific dynamic color styling
+    const LAYER_THEMES = {
+      Satellite: { color: '#059669', fillColor: '#10b981', fillOpacity: 0.12, label: 'High-Res Optical' },
+      NDVI:      { color: '#16a34a', fillColor: '#22c55e', fillOpacity: 0.22, label: 'NDVI Vegetation Vigor' },
+      NDMI:      { color: '#0284c7', fillColor: '#38bdf8', fillOpacity: 0.24, label: 'NDMI Canopy Moisture' },
+      EVI:       { color: '#0d9488', fillColor: '#14b8a6', fillOpacity: 0.22, label: 'EVI Biomass Canopy' },
+      GNDVI:     { color: '#65a30d', fillColor: '#84cc16', fillOpacity: 0.22, label: 'GNDVI Chlorophyll & Nitrogen' },
+      NDRE:      { color: '#ea580c', fillColor: '#f97316', fillOpacity: 0.22, label: 'NDRE Red-Edge Early Stress' },
+      SAVI:      { color: '#ca8a04', fillColor: '#eab308', fillOpacity: 0.22, label: 'SAVI Soil-Adjusted Index' },
+      Moisture:  { color: '#0369a1', fillColor: '#0ea5e9', fillOpacity: 0.25, label: 'Soil & Canopy Moisture' },
+    };
+
+    const theme = LAYER_THEMES[activeLayer] || LAYER_THEMES.NDVI;
+
+    try {
+      L.geoJSON(boundaryGeojson, {
+        style: {
+          color: theme.color,
+          weight: 3,
+          fillColor: theme.fillColor,
+          fillOpacity: theme.fillOpacity,
+          dashArray: activeLayer === 'Satellite' ? undefined : '2, 2',
+        },
+      }).addTo(layerGroupRef.current);
+    } catch {}
+  }, [boundaryGeojson, activeLayer]);
 
   const handleSearch = useCallback(async () => {
     const q = searchQuery.trim();
@@ -239,7 +278,7 @@ export default function NdviMap({ boundaryGeojson, gridCells, allBoundaries = []
 
   return (
     <div style={{ position: "relative" }}>
-      <div className="map-search-control">
+      {!hideSearch && <div className="map-search-control">
         <div style={{ position: "relative" }}>
           <div style={{ display: "flex", gap: "4px" }}>
             <input
@@ -277,10 +316,10 @@ export default function NdviMap({ boundaryGeojson, gridCells, allBoundaries = []
             </div>
           )}
         </div>
-      </div>
+      </div>}
       <div
         ref={containerRef}
-        style={{ height: "420px", width: "100%", borderRadius: "10px", border: "1px solid var(--line)" }}
+        style={{ height, width: "100%", borderRadius: "14px", border: "1px solid var(--line)" }}
         onClick={() => setShowResults(false)}
       />
     </div>

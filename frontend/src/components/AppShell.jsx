@@ -15,18 +15,15 @@ import {
   IconLogout,
   IconSearch,
   IconSliders,
+  IconBell,
 } from "./icons.jsx";
 import NotificationBell from "./NotificationBell.jsx";
 import FloatingChatbot from "./FloatingChatbot.jsx";
 import { ToastProvider, useToast } from "./Toast.jsx";
-import i18n from "../i18n.js";
-import { ChevronDown, ChevronRight, Wifi, WifiOff } from "lucide-react";
+import i18n, { SUPPORTED_LANGUAGES } from "../i18n.js";
+import { ChevronDown, ChevronRight, Wifi, WifiOff, TrendingUp, Landmark, Award, Globe, Check } from "lucide-react";
 
-const LANG_OPTIONS = [
-  { value: "en", label: "EN" },
-  { value: "hi", label: "हि" },
-  { value: "mr", label: "म" },
-];
+const LANG_OPTIONS = SUPPORTED_LANGUAGES.map((l) => ({ value: l.code, label: l.label, title: l.full }));
 
 function greeting(t) {
   const h = new Date().getHours();
@@ -53,11 +50,28 @@ function AppShellContent({
   
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showSidebarMenu, setShowSidebarMenu] = useState(false);
+  const [showLangMenu, setShowLangMenu] = useState(false);
   const [isSidebarHidden, setIsSidebarHidden] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const searchInputRef = useRef(null);
+  const langMenuRef = useRef(null);
+
+  // Click outside to close language dropdown
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(e.target)) {
+        setShowLangMenu(false);
+      }
+    };
+    if (showLangMenu) {
+      document.addEventListener("mousedown", handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [showLangMenu]);
 
   // Accordion State: collapse non-active categories by default
   const [openGroups, setOpenGroups] = useState({
@@ -65,6 +79,7 @@ function AppShellContent({
     intelligence: false,
     ai_support: false,
     market: false,
+    schemes_credits: false,
     communication: false,
     system: false,
   });
@@ -101,13 +116,17 @@ function AppShellContent({
   }, []);
 
   const SEARCH_ITEMS = [
-    { label: "AI Seller & Market Advisor", path: "/advisor", keywords: ["ai seller", "seller", "advisor", "market", "mandi", "price", "sell", "crop price"] },
     { label: "AI What-If Simulation", path: "/what-if", keywords: ["what if", "simulation", "simulate", "yield", "risk", "decision", "lab"] },
+    { label: "Alerts & Outbreak Radar", path: "/alerts", keywords: ["alerts", "outbreak", "radar", "48 hours", "25km", "sentinel", "notification"] },
+    { label: "Yield Predictor & Season ROI", path: "/yield-predictor", keywords: ["yield", "yield predictor", "harvest", "roi", "profit", "profitability", "season simulator"] },
+    { label: "AI Seller & Market Advisor", path: "/advisor", keywords: ["ai seller", "seller", "advisor", "market", "mandi", "price", "sell", "crop price"] },
     { label: "Weather & Soil Information", path: "/weather", keywords: ["weather", "soil", "rain", "temperature", "humidity", "forecast", "sun", "wind"] },
     { label: "Dashboard & Farm Digital Twin", path: "/dashboard", keywords: ["dashboard", "home", "farm", "twin", "risk", "soil", "acres", "field"] },
     { label: "Disease Detection", path: "/disease-detection", keywords: ["disease", "pests", "detection", "leaf", "scan", "crop health", "diagnosis"] },
     { label: "Service Hub", path: "/services", keywords: ["services", "service hub", "spray", "harvester", "drone", "booking"] },
     { label: "Marketplace", path: "/marketplace", keywords: ["marketplace", "buy", "sell", "listing", "offers", "trade", "crop"] },
+    { label: "Government Schemes & Subsidies", path: "/schemes", keywords: ["scheme", "subsidy", "pm kisan", "dbt", "pmfby", "government"] },
+    { label: "Soil Carbon & Carbon Credits", path: "/carbon-credits", keywords: ["carbon", "carbon credits", "soil organic carbon", "esg", "sequestration", "passport"] },
     { label: "Inbox & Messages", path: "/inbox", keywords: ["inbox", "messages", "offers", "chat", "notification"] },
     { label: "Settings", path: "/settings", keywords: ["settings", "profile", "language", "account", "logout"] },
   ];
@@ -135,46 +154,56 @@ function AppShellContent({
   const NAV_GROUPS = [
     {
       id: "overview",
-      title: "OVERVIEW",
+      title: t("nav.groups.overview", "OVERVIEW"),
       items: [
         { to: "/dashboard", label: t("nav.dashboard", "Dashboard"), icon: IconDashboard },
       ],
     },
     {
       id: "intelligence",
-      title: "FARM INTELLIGENCE",
+      title: t("nav.groups.intelligence", "FARM INTELLIGENCE"),
       items: [
-        { to: "/weather", label: "Weather & Soil", icon: IconWeather },
+        { to: "/weather", label: t("nav.weather_soil", "Weather & Soil"), icon: IconWeather },
         { to: "/disease-detection", label: t("nav.disease", "Disease Detection"), icon: IconLeaf },
       ],
     },
     {
       id: "ai_support",
-      title: "AI & DECISION SUPPORT",
+      title: t("nav.groups.ai_support", "AI & DECISION SUPPORT"),
       items: [
         { to: "/what-if", label: t("nav.what_if", "What-if Simulation"), icon: IconSliders },
-        { to: "/advisor", label: "AI Insights & Seller", icon: IconAdvisor },
+        { to: "/alerts", label: t("nav.alerts", "Alerts"), icon: IconBell },
+        { to: "/yield-predictor", label: t("nav.yield_predictor", "Yield Predictor"), icon: TrendingUp },
+        { to: "/advisor", label: t("nav.ai_insights", "AI Insights & Seller"), icon: IconAdvisor },
       ],
     },
     {
       id: "market",
-      title: "MARKET & SERVICES",
+      title: t("nav.groups.market", "MARKET & SERVICES"),
       items: [
         { to: "/marketplace", label: t("nav.marketplace", "Marketplace"), icon: IconMarketplace },
         { to: "/services", label: t("nav.services", "Service Hub"), icon: IconServices },
-        { to: "/offers", label: "Offers & Buyer", icon: IconFarm },
+        { to: "/offers", label: t("nav.offers_buyer", "Offers & Buyer"), icon: IconFarm },
+      ],
+    },
+    {
+      id: "schemes_credits",
+      title: t("nav.groups.schemes_credits", "SCHEMES & CREDITS"),
+      items: [
+        { to: "/schemes", label: t("nav.schemes", "Government Scheme Advisor"), icon: Landmark },
+        { to: "/carbon-credits", label: t("nav.carbon_credits", "Carbon Credits"), icon: Award },
       ],
     },
     {
       id: "communication",
-      title: "COMMUNICATION",
+      title: t("nav.groups.communication", "COMMUNICATION"),
       items: [
         { to: "/inbox", label: t("nav.inbox", "Inbox"), icon: IconInbox },
       ],
     },
     {
       id: "system",
-      title: "SYSTEM",
+      title: t("nav.groups.system", "SYSTEM"),
       items: [
         { to: "/settings", label: t("nav.settings", "Settings"), icon: IconSettings },
       ],
@@ -199,11 +228,23 @@ function AppShellContent({
     { weekday: "long", day: "numeric", month: "long", year: "numeric" }
   );
 
-  const currentLang = i18n.language || "en";
+  const [activeLang, setActiveLang] = useState(() => i18n.language || "en");
+
+  useEffect(() => {
+    const handleLngChange = (lng) => {
+      setActiveLang(lng);
+    };
+    i18n.on("languageChanged", handleLngChange);
+    return () => {
+      i18n.off("languageChanged", handleLngChange);
+    };
+  }, []);
+
+  const currentLang = activeLang;
 
   const handleLangSwitch = (lang) => {
+    i18n.changeLanguage(lang);
     if (onLanguageChange) onLanguageChange(lang);
-    else i18n.changeLanguage(lang);
   };
 
   return (
@@ -217,7 +258,7 @@ function AppShellContent({
       )}
 
       {/* Sidebar Navigation */}
-      <aside className="sidebar" style={{ display: isSidebarHidden ? "none" : "flex", background: "linear-gradient(180deg, #0b291f 0%, #061913 100%)" }}>
+      <aside className="sidebar" style={{ display: isSidebarHidden ? "none" : "flex", background: "linear-gradient(170deg, #1a3d2b 0%, #0e2318 100%)", borderRadius: "0 24px 24px 0" }}>
         <div className="sidebar-brand" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative" }}>
           <div>
             <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "#ffffff", letterSpacing: "-0.5px" }}>FarmTwin AI</span>
@@ -416,13 +457,15 @@ function AppShellContent({
                             alignItems: "center",
                             gap: "0.6rem",
                             padding: "0.55rem 0.75rem",
-                            borderRadius: "12px",
+                            borderRadius: "14px",
                             fontSize: "0.82rem",
-                            fontWeight: isActive ? 700 : 500,
-                            color: isActive ? "#0b291f" : "#d1e2d6",
-                            background: isActive ? "#aae5aa" : "transparent",
-                            transition: "all 0.15s ease",
+                            fontWeight: isActive ? 800 : 600,
+                            color: isActive ? "#1a3d2b" : "#d1e2d6",
+                            background: isActive ? "linear-gradient(135deg, #a8dfb8, #c4eed4)" : "transparent",
+                            boxShadow: isActive ? "4px 4px 12px rgba(0,0,0,0.2), -2px -2px 8px rgba(255,255,255,0.06)" : "none",
+                            transition: "all 0.18s ease",
                             textDecoration: "none",
+                            fontFamily: "'Nunito', sans-serif",
                           }}
                         >
                           <span className="sidebar-icon" style={{ opacity: isActive ? 1 : 0.8 }}>
@@ -439,22 +482,6 @@ function AppShellContent({
           })}
         </nav>
 
-        {/* Weather Mini-Report in Sidebar below Settings */}
-        <div style={{ margin: "0.5rem 0.5rem 0.85rem", padding: "0.75rem 0.85rem", background: "rgba(255, 255, 255, 0.07)", border: "1px solid rgba(255, 255, 255, 0.12)", borderRadius: "12px", color: "#e8e4d9" }}>
-          <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "#aae5aa", letterSpacing: "0.08em", marginBottom: "0.4rem" }}>TODAY</div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem" }}>
-            <span style={{ fontSize: "1.4rem" }}>☀️</span>
-            <div>
-              <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#ffffff" }}>27°C</div>
-              <div style={{ fontSize: "0.7rem", color: "#88ab98" }}>Feels like 28°C</div>
-            </div>
-          </div>
-          <div style={{ fontSize: "0.72rem", color: "#d1e2d6", display: "flex", flexDirection: "column", gap: "0.15rem", fontWeight: 500 }}>
-            <div>Rain probability 20%</div>
-            <div>Humidity 71%</div>
-            <div>Wind 12 km/h</div>
-          </div>
-        </div>
 
         <div className="sidebar-footer" style={{ padding: "0.85rem", fontSize: "0.8rem", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
           <strong style={{ fontSize: "0.9rem", color: "#fff", display: "block" }}>{user?.name || "Farmer"}</strong>
@@ -476,25 +503,26 @@ function AppShellContent({
       </aside>
 
       {/* Main Content Area */}
-      <div className="shell-main" style={{ background: "#f7fbf8" }}>
-        <header className="shell-topbar" style={{ background: "#ffffff", borderBottom: "1px solid #e2ebd9" }}>
+      <div className="shell-main" style={{ background: "var(--clay-bg)" }}>
+        <header className="shell-topbar" style={{ background: "var(--clay-surface)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.85rem" }}>
             {isSidebarHidden && (
               <button
                 onClick={() => setIsSidebarHidden(false)}
                 style={{
-                  background: "#134e43",
+                  background: "linear-gradient(135deg, var(--farm-green), var(--farm-emerald))",
                   border: "none",
-                  borderRadius: "8px",
+                  borderRadius: "14px",
                   color: "#ffffff",
-                  padding: "6px 12px",
+                  padding: "6px 14px",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   gap: "6px",
-                  fontWeight: 700,
+                  fontWeight: 800,
                   fontSize: "0.82rem",
-                  boxShadow: "0 2px 8px rgba(19,78,67,0.2)",
+                  boxShadow: "5px 5px 14px var(--clay-shadow-dark), -3px -3px 10px var(--clay-shadow-light)",
+                  fontFamily: "'Nunito', sans-serif",
                 }}
                 title="Show Sidebar"
                 aria-label="Show Sidebar"
@@ -509,11 +537,11 @@ function AppShellContent({
             )}
 
             <div>
-              <h2 className="display" style={{ fontSize: "1.18rem", color: "#0f382c", fontWeight: 800 }}>
+              <h2 className="display" style={{ fontSize: "1.18rem", color: "var(--soil)", fontWeight: 900, fontFamily: "'Nunito', sans-serif" }}>
                 {greeting(t)}, {user?.name?.split(" ")[0]}
                 <span style={{ marginLeft: "0.4rem" }}>👋</span>
               </h2>
-              <p style={{ margin: "0.15rem 0 0", fontSize: "0.82rem", color: "#556e60", fontWeight: 500 }}>
+              <p style={{ margin: "0.15rem 0 0", fontSize: "0.82rem", color: "var(--sage-mid)", fontWeight: 600, fontFamily: "'Nunito', sans-serif" }}>
                 {today}
               </p>
             </div>
@@ -554,16 +582,18 @@ function AppShellContent({
                   paddingLeft: "2.4rem",
                   paddingRight: "3rem",
                   width: 280,
-                  height: 38,
-                  borderRadius: "12px",
-                  border: "1px solid #dce7dc",
-                  background: "#f7faf8",
+                  height: 40,
+                  borderRadius: "16px",
+                  border: "none",
+                  background: "var(--clay-surface)",
+                  boxShadow: "var(--clay-inset)",
                   fontSize: "0.82rem",
-                  color: "#132c23",
+                  color: "var(--ink)",
                   outline: "none",
                   transition: "all 0.2s ease",
+                  fontFamily: "'Nunito', sans-serif",
+                  fontWeight: 600,
                 }}
-                className="focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20"
               />
               <span
                 style={{
@@ -572,13 +602,14 @@ function AppShellContent({
                   top: "50%",
                   transform: "translateY(-50%)",
                   fontSize: "0.68rem",
-                  fontWeight: 700,
-                  color: "#88ab98",
-                  background: "#eaf5ee",
-                  border: "1px solid #c2e3cb",
-                  padding: "1px 6px",
-                  borderRadius: "6px",
+                  fontWeight: 800,
+                  color: "var(--sage-mid)",
+                  background: "var(--clay-bg)",
+                  boxShadow: "2px 2px 5px var(--clay-shadow-dark), -1px -1px 4px var(--clay-shadow-light)",
+                  padding: "2px 7px",
+                  borderRadius: "8px",
                   pointerEvents: "none",
+                  fontFamily: "'Nunito', sans-serif",
                 }}
               >
                 Ctrl K
@@ -588,13 +619,13 @@ function AppShellContent({
                 <div
                   style={{
                     position: "absolute",
-                    top: "44px",
+                    top: "48px",
                     left: 0,
                     right: 0,
-                    background: "#ffffff",
-                    borderRadius: "14px",
-                    boxShadow: "0 10px 28px rgba(12,43,33,0.15)",
-                    border: "1px solid #dce7dc",
+                    background: "var(--clay-surface)",
+                    borderRadius: "20px",
+                    boxShadow: "var(--clay-card-shadow-lg)",
+                    border: "none",
                     overflow: "hidden",
                     zIndex: 1000,
                     minWidth: "280px",
@@ -610,19 +641,20 @@ function AppShellContent({
                           setShowSearchDropdown(false);
                         }}
                         style={{
-                          padding: "0.7rem 0.9rem",
+                          padding: "0.7rem 1rem",
                           fontSize: "0.82rem",
-                          color: "#132c23",
-                          fontWeight: 600,
+                          color: "var(--ink)",
+                          fontWeight: 700,
                           cursor: "pointer",
-                          borderBottom: "1px solid #edf4ee",
+                          borderBottom: "2px solid var(--clay-bg)",
                           display: "flex",
                           alignItems: "center",
                           gap: "8px",
                           transition: "background 0.15s ease",
+                          fontFamily: "'Nunito', sans-serif",
                         }}
-                        onMouseOver={(e) => (e.currentTarget.style.background = "#eaf5ee")}
-                        onMouseOut={(e) => (e.currentTarget.style.background = "#ffffff")}
+                        onMouseOver={(e) => (e.currentTarget.style.background = "var(--clay-bg-lighter)")}
+                        onMouseOut={(e) => (e.currentTarget.style.background = "var(--clay-surface)")}
                       >
                         <span style={{ color: "#134e43" }}>🔍</span> {item.label}
                       </div>
@@ -636,43 +668,161 @@ function AppShellContent({
               )}
             </form>
 
-            {/* Language Switcher */}
-            <div
+            {/* Language Switcher Dropdown */}
+            <div ref={langMenuRef} style={{ position: "relative" }}>
+              <button
+                type="button"
+                onClick={() => setShowLangMenu((prev) => !prev)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  background: "var(--clay-surface)",
+                  borderRadius: "18px",
+                  padding: "6px 14px",
+                  border: "none",
+                  boxShadow: showLangMenu ? "var(--clay-inset-sm)" : "var(--clay-card-shadow-sm)",
+                  cursor: "pointer",
+                  color: "var(--soil)",
+                  fontFamily: "'Nunito', sans-serif",
+                  fontWeight: 800,
+                  fontSize: "0.82rem",
+                  transition: "all 0.18s ease",
+                }}
+                title="Switch Language"
+              >
+                <Globe className="w-3.5 h-3.5 text-emerald-700" />
+                <span style={{ minWidth: "18px", textAlign: "center" }}>
+                  {LANG_OPTIONS.find((l) => l.value === currentLang)?.label || "EN"}
+                </span>
+                <span style={{ fontSize: "0.74rem", color: "var(--sage-mid)", fontWeight: 600 }}>
+                  {LANG_OPTIONS.find((l) => l.value === currentLang)?.title || "English"}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-emerald-800 transition-transform duration-200 ${
+                    showLangMenu ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {showLangMenu && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    right: 0,
+                    width: "190px",
+                    background: "var(--clay-surface)",
+                    borderRadius: "20px",
+                    boxShadow: "var(--clay-card-shadow-lg)",
+                    padding: "8px",
+                    zIndex: 1000,
+                    border: "none",
+                    animation: "fadeIn 0.15s ease",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "0.68rem",
+                      fontWeight: 800,
+                      color: "var(--sage-mid)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      padding: "4px 8px 6px",
+                      borderBottom: "1px solid rgba(0,0,0,0.06)",
+                      marginBottom: "4px",
+                    }}
+                  >
+                    Select Language / भाषा
+                  </div>
+                  {LANG_OPTIONS.map((opt) => {
+                    const isSelected = currentLang === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => {
+                          handleLangSwitch(opt.value);
+                          setShowLangMenu(false);
+                        }}
+                        style={{
+                          width: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "8px 10px",
+                          borderRadius: "12px",
+                          border: "none",
+                          cursor: "pointer",
+                          background: isSelected
+                            ? "linear-gradient(135deg, var(--farm-green), var(--farm-emerald))"
+                            : "transparent",
+                          color: isSelected ? "#ffffff" : "var(--soil)",
+                          fontFamily: "'Nunito', sans-serif",
+                          fontWeight: isSelected ? 800 : 600,
+                          fontSize: "0.82rem",
+                          boxShadow: isSelected ? "var(--clay-card-shadow-sm)" : "none",
+                          transition: "all 0.15s ease",
+                          marginBottom: "2px",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected) e.currentTarget.style.background = "var(--clay-bg-lighter)";
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) e.currentTarget.style.background = "transparent";
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span
+                            style={{
+                              display: "inline-block",
+                              width: "22px",
+                              fontWeight: 800,
+                              color: isSelected ? "#ffffff" : "var(--farm-emerald)",
+                            }}
+                          >
+                            {opt.label}
+                          </span>
+                          <span>{opt.title}</span>
+                        </div>
+                        {isSelected && <Check className="w-3.5 h-3.5" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Hands-Free Field Mode Action Button */}
+            <button
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("agrimitra:fieldmode"));
+              }}
               style={{
                 display: "flex",
                 alignItems: "center",
-                background: "#eaf5ee",
+                gap: "5px",
+                background: "linear-gradient(135deg, var(--farm-green) 0%, var(--farm-emerald) 100%)",
+                color: "#ffffff",
+                padding: "6px 14px",
                 borderRadius: "16px",
-                padding: "2px",
-                gap: "1px",
-                border: "1px solid #c2e3cb",
+                border: "none",
+                fontSize: "0.78rem",
+                fontWeight: 800,
+                cursor: "pointer",
+                boxShadow: "5px 5px 14px var(--clay-shadow-dark), -3px -3px 10px var(--clay-shadow-light), 0 4px 12px rgba(45,122,79,0.25)",
+                transition: "all 0.18s ease",
+                fontFamily: "'Nunito', sans-serif",
               }}
-              title="Switch language"
+              title="Activate Hands-Free Field Mode (Voice Input & Native Spoken Output)"
             >
-              {LANG_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => handleLangSwitch(opt.value)}
-                  style={{
-                    padding: "4px 10px",
-                    borderRadius: "12px",
-                    border: "none",
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    background: currentLang === opt.value ? "#134e43" : "transparent",
-                    color: currentLang === opt.value ? "#ffffff" : "#556e60",
-                    transition: "all 0.15s",
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+              <span style={{ fontSize: "0.85rem" }}>🎙️</span>
+              <span>{currentLang === "mr" ? "शेत मोड" : currentLang === "hi" ? "फील्ड मोड" : "Field Mode"}</span>
+            </button>
 
             <NotificationBell userId={user?.id} role={role} />
 
-            <span className="role-pill" style={{ background: "#eaf5ee", color: "#134e43", border: "1px solid #c2e3cb", fontWeight: 700, borderRadius: "12px" }}>
+            <span className="role-pill" style={{ fontFamily: "'Nunito', sans-serif" }}>
               {role === "buyer" ? t("login.buyer") : t("login.farmer")}
             </span>
 
@@ -681,20 +831,20 @@ function AppShellContent({
               <div
                 onClick={() => setShowProfileMenu((prev) => !prev)}
                 style={{
-                  width: 36,
-                  height: 36,
+                  width: 40,
+                  height: 40,
                   borderRadius: "50%",
-                  background: "#134e43",
+                  background: "linear-gradient(135deg, var(--farm-green), var(--farm-emerald))",
                   color: "#ffffff",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontWeight: 700,
+                  fontWeight: 900,
                   fontSize: "0.88rem",
-                  boxShadow: "0 2px 6px rgba(19,78,67,0.2)",
+                  boxShadow: "5px 5px 14px var(--clay-shadow-dark), -3px -3px 10px var(--clay-shadow-light)",
                   cursor: "pointer",
                   flexShrink: 0,
-                  border: "2px solid #aae5aa",
+                  border: "3px solid var(--clay-shadow-light)",
                   transition: "all 0.15s ease",
                 }}
                 title={user?.name || "Profile"}
@@ -715,15 +865,15 @@ function AppShellContent({
                   style={{
                     position: "absolute",
                     right: 0,
-                    top: "45px",
-                    width: "240px",
-                    background: "#ffffff",
-                    borderRadius: "16px",
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.18)",
-                    border: "1px solid #e7e3d8",
+                    top: "50px",
+                    width: "250px",
+                    background: "var(--clay-surface)",
+                    borderRadius: "24px",
+                    boxShadow: "var(--clay-card-shadow-lg)",
+                    border: "none",
                     padding: "1rem",
                     zIndex: 1000,
-                    color: "#1c2419",
+                    color: "var(--ink)",
                   }}
                 >
                   <div
@@ -733,21 +883,23 @@ function AppShellContent({
                       gap: "10px",
                       marginBottom: "0.75rem",
                       paddingBottom: "0.75rem",
-                      borderBottom: "1px solid #eee8db",
+                      borderBottom: "2px solid var(--clay-bg)",
                     }}
                   >
                     <div
                       style={{
-                        width: 40,
-                        height: 40,
+                        width: 44,
+                        height: 44,
                         borderRadius: "50%",
-                        background: "#134e43",
+                        background: "linear-gradient(135deg, var(--farm-green), var(--farm-emerald))",
                         color: "#fff",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontWeight: 700,
+                        fontWeight: 900,
                         fontSize: "1rem",
+                        boxShadow: "var(--clay-card-shadow-sm)",
+                        fontFamily: "'Nunito', sans-serif",
                       }}
                     >
                       {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
@@ -755,17 +907,18 @@ function AppShellContent({
                     <div style={{ overflow: "hidden" }}>
                       <div
                         style={{
-                          fontWeight: 700,
+                          fontWeight: 800,
                           fontSize: "0.95rem",
-                          color: "#1c2419",
+                          color: "var(--soil)",
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
+                          fontFamily: "'Nunito', sans-serif",
                         }}
                       >
                         {user?.name || "User"}
                       </div>
-                      <span className="role-pill" style={{ fontSize: "0.68rem", padding: "1px 6px" }}>
+                      <span className="role-pill" style={{ fontSize: "0.68rem", padding: "1px 8px" }}>
                         {role === "buyer" ? t("login.buyer") : t("login.farmer")}
                       </span>
                     </div>
@@ -777,20 +930,22 @@ function AppShellContent({
                       flexDirection: "column",
                       gap: "0.55rem",
                       fontSize: "0.82rem",
-                      color: "#4a4436",
+                      color: "var(--sage-mid)",
                       marginBottom: "0.85rem",
+                      fontFamily: "'Nunito', sans-serif",
+                      fontWeight: 600,
                     }}
                   >
                     {user?.email && (
                       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <span>📧</span>
-                        <span style={{ wordBreak: "break-all", fontWeight: 500 }}>{user.email}</span>
+                        <span style={{ wordBreak: "break-all" }}>{user.email}</span>
                       </div>
                     )}
                     {user?.phone && (
                       <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <span>📞</span>
-                        <span style={{ fontWeight: 500 }}>{user.phone}</span>
+                        <span>{user.phone}</span>
                       </div>
                     )}
                   </div>
@@ -802,14 +957,16 @@ function AppShellContent({
                     }}
                     style={{
                       width: "100%",
-                      padding: "0.5rem",
-                      borderRadius: "10px",
-                      border: "1px solid #fecaca",
-                      background: "#fef2f2",
-                      color: "#991b1b",
-                      fontWeight: 600,
+                      padding: "0.6rem",
+                      borderRadius: "14px",
+                      border: "none",
+                      background: "linear-gradient(135deg, #e8b0aa, #f0c0ba)",
+                      color: "#6b1a1a",
+                      fontWeight: 800,
                       fontSize: "0.82rem",
                       cursor: "pointer",
+                      boxShadow: "var(--clay-card-shadow-sm)",
+                      fontFamily: "'Nunito', sans-serif",
                     }}
                   >
                     {t("common.logout")}
