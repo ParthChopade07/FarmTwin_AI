@@ -1,4 +1,4 @@
-# AgriTwin AI
+# FarmTwin AI
 
 Farmer → Farm location → Satellite + weather + soil/crop data → AI analysis → Recommendations → Dashboard
 
